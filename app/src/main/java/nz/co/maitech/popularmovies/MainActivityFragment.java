@@ -18,18 +18,29 @@ import java.util.List;
  */
 public class MainActivityFragment extends Fragment {
 
-    private Integer[] mThumbsIds = {
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7
+    private Movie[] movies = {
+            new Movie(R.drawable.sample_2),
+            new Movie(R.drawable.sample_3),
+            new Movie(R.drawable.sample_4),
+            new Movie(R.drawable.sample_5),
+            new Movie(R.drawable.sample_6),
+            new Movie(R.drawable.sample_7),
+            new Movie(R.drawable.sample_0),
+            new Movie(R.drawable.sample_1),
+            new Movie(R.drawable.sample_2),
+            new Movie(R.drawable.sample_3),
+            new Movie(R.drawable.sample_4),
+            new Movie(R.drawable.sample_5),
+            new Movie(R.drawable.sample_6),
+            new Movie(R.drawable.sample_7),
+            new Movie(R.drawable.sample_0),
+            new Movie(R.drawable.sample_1),
+            new Movie(R.drawable.sample_2),
+            new Movie(R.drawable.sample_3),
+            new Movie(R.drawable.sample_4),
+            new Movie(R.drawable.sample_5),
+            new Movie(R.drawable.sample_6),
+            new Movie(R.drawable.sample_7)
     };
 
     public MainActivityFragment() {
@@ -40,7 +51,7 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        List<Integer> thumbNailImages = new ArrayList<>(Arrays.asList(mThumbsIds));
+        List<Movie> thumbNailImages = new ArrayList<>(Arrays.asList(movies));
 
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
         moviePosterView.setAdapter(new MoviePosterAdapter(getActivity(), thumbNailImages));
