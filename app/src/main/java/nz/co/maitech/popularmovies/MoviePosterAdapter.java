@@ -1,60 +1,42 @@
 package nz.co.maitech.popularmovies;
 
-import android.content.Context;
+import android.app.Activity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
+import java.util.List;
+
 /**
- * Created by Grant on 3/05/2016.
+ * MoviePosterAdapter is a custom implementation of ArrayAdapter<>
  */
-public class MoviePosterAdapter extends BaseAdapter {
+public class MoviePosterAdapter extends ArrayAdapter<Integer> {
 
-    private Context mContext;
-    private Integer[] mThumbsIds = {
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7
-    };
-
-    public MoviePosterAdapter(Context c) {
-        mContext =c;
+    /**
+     * Basic constructor, doesn't reference a layout, as creates a customer layout.
+     * @param context The context where the adapter is placed.
+     * @param mThumbs The list of data submitted.
+     */
+    public MoviePosterAdapter(Activity context, List<Integer> mThumbs) {
+        super(context, 0, mThumbs);
     }
 
-    public int getCount() {
-        return mThumbsIds.length;
-    }
-
-    public Object getItem(int position) {
-        return null;
-    }
-
-    public long getItemId(int position) {
-        return 0;
-    }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ImageView imageView;
+        Integer thumbNailImageResource = getItem(position);
+        View rootView;
+
         if (convertView == null) {
-            imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new ViewGroup.LayoutParams(85,85));
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            imageView.setPadding(8, 8, 8, 8);
+            rootView = LayoutInflater.from(getContext()).inflate(R.layout.grid_item_poster, parent, false);
         } else {
-            imageView = (ImageView) convertView;
+            rootView = convertView;
         }
-        imageView.setImageResource(mThumbsIds[position]);
-        return imageView;
+        ((ImageView) rootView.findViewById(R.id.movie_poster_image_view)).setImageResource(thumbNailImageResource);
+
+        return rootView;
     }
 
 
