@@ -12,7 +12,9 @@ public class Movie {
     private String rating;
     private String posterPath;
 
-    public Movie() {}
+    public Movie() {
+        imageResourceId = R.drawable.sample_0;
+    }
 
     public Movie(Integer imageResourceId) {
         this.imageResourceId = imageResourceId;

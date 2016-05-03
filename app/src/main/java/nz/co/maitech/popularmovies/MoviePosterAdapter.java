@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.List;
 
 /**
@@ -27,16 +29,17 @@ public class MoviePosterAdapter extends ArrayAdapter<Movie> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Movie movie = getItem(position);
-        View rootView;
+        String posterURL =  "http://image.tmdb.org/t/p/w185/";
+
 
         if (convertView == null) {
-            rootView = LayoutInflater.from(getContext()).inflate(R.layout.grid_item_poster, parent, false);
-        } else {
-            rootView = convertView;
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.grid_item_poster, parent, false);
         }
-        ((ImageView) rootView.findViewById(R.id.movie_poster_image_view)).setImageResource(movie.getImageId());
 
-        return rootView;
+        ImageView posterView = (ImageView) convertView.findViewById(R.id.movie_poster_image_view);
+        Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(posterView);
+
+        return convertView;
     }
 
 
