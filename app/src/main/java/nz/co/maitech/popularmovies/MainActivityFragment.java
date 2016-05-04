@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -32,49 +31,34 @@ import java.util.List;
 public class MainActivityFragment extends Fragment {
 
     private MoviePosterAdapter moviePosterAdapter;
-    private Movie[] movies = {
-            new Movie(R.drawable.sample_2),
-            new Movie(R.drawable.sample_3),
-            new Movie(R.drawable.sample_4),
-            new Movie(R.drawable.sample_5),
-            new Movie(R.drawable.sample_6),
-            new Movie(R.drawable.sample_7),
-            new Movie(R.drawable.sample_0),
-            new Movie(R.drawable.sample_1),
-            new Movie(R.drawable.sample_2),
-            new Movie(R.drawable.sample_3),
-            new Movie(R.drawable.sample_4),
-            new Movie(R.drawable.sample_5),
-            new Movie(R.drawable.sample_6),
-            new Movie(R.drawable.sample_7),
-            new Movie(R.drawable.sample_0),
-            new Movie(R.drawable.sample_1),
-            new Movie(R.drawable.sample_2),
-            new Movie(R.drawable.sample_3),
-            new Movie(R.drawable.sample_4),
-            new Movie(R.drawable.sample_5),
-            new Movie(R.drawable.sample_6),
-            new Movie(R.drawable.sample_7)
-    };
+
 
     public MainActivityFragment() {
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        retrieveMovies();
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        List<Movie> thumbNailImages = new ArrayList<>(Arrays.asList(movies));
 
+        List<Movie> movieList = new ArrayList<>();
+        moviePosterAdapter = new MoviePosterAdapter(getActivity(),movieList);
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
-        moviePosterAdapter = new MoviePosterAdapter(getActivity(), thumbNailImages);
+
         moviePosterView.setAdapter(moviePosterAdapter);
 
         moviePosterView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                retrieveMovies();
+
                 Toast.makeText(getContext(), "" + position, Toast.LENGTH_SHORT).show();
             }
         });
@@ -173,17 +157,13 @@ public class MainActivityFragment extends Fragment {
             Movie[] movieArray = new Movie[movieJsonArray.length()];
             for (int i = 0; i < movieJsonArray.length(); i++) {
                 JSONObject jsonMovie = movieJsonArray.getJSONObject(i);
-
                 Movie movie = new Movie();
                 movie.setTitle(jsonMovie.getString(MAPI_TITLE));
                 movie.setOverview(jsonMovie.getString(MAPI_OVERVIEW));
                 movie.setPosterPath(jsonMovie.getString(MAPI_POSTER));
                 movie.setRating(jsonMovie.getString(MAPI_RATING));
                 movie.setReleaseDate(jsonMovie.getString(MAPI_RELEASE_DATE));
-
                 movieArray[i] = movie;
-
-                Log.v(LOG_TAG, movie.toString());
             }
 
             return movieArray;
@@ -192,9 +172,13 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(Movie[] result) {
             if (result != null) {
-                moviePosterAdapter.clear();
-                for (Movie movie : result) {
-                    moviePosterAdapter.add(movie);
+                if (moviePosterAdapter == null) {
+
+                } else {
+                    moviePosterAdapter.clear();
+                    for (Movie movie : result) {
+                        moviePosterAdapter.add(movie);
+                    }
                 }
             }
         }
