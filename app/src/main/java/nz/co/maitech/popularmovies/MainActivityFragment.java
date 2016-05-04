@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -31,15 +30,27 @@ import java.util.List;
 public class MainActivityFragment extends Fragment {
 
     private MoviePosterAdapter moviePosterAdapter;
+    private ArrayList<Movie> movieList = new ArrayList<>();
+    private String SAVE_STATE_MOVIE_LIST_KEY = "movies";
 
 
     public MainActivityFragment() {
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        retrieveMovies();
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(SAVE_STATE_MOVIE_LIST_KEY, movieList);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState == null || !savedInstanceState.containsKey(SAVE_STATE_MOVIE_LIST_KEY)) {
+            movieList = new ArrayList<>();
+        } else {
+            movieList = savedInstanceState.getParcelableArrayList(SAVE_STATE_MOVIE_LIST_KEY);
+        }
     }
 
 
@@ -49,12 +60,12 @@ public class MainActivityFragment extends Fragment {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
 
-        List<Movie> movieList = new ArrayList<>();
-        moviePosterAdapter = new MoviePosterAdapter(getActivity(),movieList);
+        moviePosterAdapter = new MoviePosterAdapter(getActivity(), movieList);
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
-
         moviePosterView.setAdapter(moviePosterAdapter);
-
+        if (savedInstanceState == null || !savedInstanceState.containsKey(SAVE_STATE_MOVIE_LIST_KEY)) {
+            retrieveMovies();
+        }
         moviePosterView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -172,18 +183,13 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(Movie[] result) {
             if (result != null) {
-                if (moviePosterAdapter == null) {
 
-                } else {
                     moviePosterAdapter.clear();
                     for (Movie movie : result) {
                         moviePosterAdapter.add(movie);
                     }
-                }
+                    Log.v(LOG_TAG, "Made an api call");
             }
         }
-
-
     }
-
 }
