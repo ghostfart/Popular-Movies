@@ -91,8 +91,6 @@ public class MainActivityFragment extends Fragment {
         final String POPULAR_SEARCH_URL = "https://api.themoviedb.org/3/movie/popular?";
         final String TOP_RATED_SEARCH_URL = "https://api.themoviedb.org/3/movie/top_rated?";
         final String APPID_QUERY = "api_key";
-        final String APPID_KEY = "7fed2f4065af40fb68914e264e1a07c7";
-        // https://api.themoviedb.org/3/movie/popular?api_key=7fed2f4065af40fb68914e264e1a07c7
 
         @Override
         protected Movie[] doInBackground(String... params) {
@@ -104,7 +102,7 @@ public class MainActivityFragment extends Fragment {
             try {
                 // Build the URL
                 uriBuilder = Uri.parse(POPULAR_SEARCH_URL).buildUpon();
-                uriBuilder.appendQueryParameter(APPID_QUERY, APPID_KEY);
+                uriBuilder.appendQueryParameter(APPID_QUERY, getString(R.string.appid_key));
                 URL url = new URL(uriBuilder.toString());
 
                 // Create the request and open the connection
