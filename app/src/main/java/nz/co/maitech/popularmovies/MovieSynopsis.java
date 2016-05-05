@@ -15,7 +15,6 @@ public class MovieSynopsis extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
-
     }
 
 }

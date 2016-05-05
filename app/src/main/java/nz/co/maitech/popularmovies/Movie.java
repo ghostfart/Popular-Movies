@@ -1,7 +1,6 @@
 package nz.co.maitech.popularmovies;
 
 
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -17,7 +16,8 @@ public class Movie implements Parcelable {
     private String rating;
     private String posterPath;
 
-    public Movie() {          }
+    public Movie() {
+    }
 
     protected Movie(Parcel in) {
         overview = in.readString();
@@ -27,7 +27,9 @@ public class Movie implements Parcelable {
         posterPath = in.readString();
     }
 
-    public String getOverview() { return overview; }
+    public String getOverview() {
+        return overview;
+    }
 
     public void setOverview(String overview) {
         this.overview = overview;
@@ -50,7 +52,7 @@ public class Movie implements Parcelable {
     }
 
     public String getRating() {
-        return rating;
+        return rating + "/10";
     }
 
     public void setRating(String rating) {
@@ -86,15 +88,20 @@ public class Movie implements Parcelable {
         dest.writeString(rating);
         dest.writeString(posterPath);
     }
-public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
-    @Override
-    public Movie createFromParcel(Parcel in) {
-        return new Movie(in);
+
+    public String getYear() {
+        return releaseDate.substring(0,4);
     }
 
-    @Override
-    public Movie[] newArray(int size) {
-        return new Movie[size];
-    }
-};
+    public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
+        @Override
+        public Movie createFromParcel(Parcel in) {
+            return new Movie(in);
+        }
+
+        @Override
+        public Movie[] newArray(int size) {
+            return new Movie[size];
+        }
+    };
 }

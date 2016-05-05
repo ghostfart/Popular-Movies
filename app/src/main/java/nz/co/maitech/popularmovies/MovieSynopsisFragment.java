@@ -7,6 +7,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -15,6 +19,7 @@ public class MovieSynopsisFragment extends Fragment {
 
     private Movie movie;
     private String LOG_TAG = this.getClass().getSimpleName();
+    private String posterURL = "http://image.tmdb.org/t/p/w185";
 
     public MovieSynopsisFragment() {
     }
@@ -27,7 +32,16 @@ public class MovieSynopsisFragment extends Fragment {
 
         if (intent != null && intent.hasExtra("movie")) {
             movie = intent.getParcelableExtra("movie");
-            Log.v(LOG_TAG, movie.getTitle());
+            TextView textView = (TextView) rootView.findViewById(R.id.synopsis_title_text_view);
+            textView.setText(movie.getTitle());
+            textView = (TextView) rootView.findViewById(R.id.synopsis_year_text_view);
+            textView.setText(movie.getYear());
+            textView = (TextView) rootView.findViewById(R.id.synopsis_rating_text_view);
+            textView.setText(movie.getRating());
+            textView = (TextView) rootView.findViewById(R.id.synopsis_overview_text_view);
+            textView.setText(movie.getOverview());
+            ImageView imageView = (ImageView) rootView.findViewById(R.id.synopsis_poster_image_view);
+            Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(imageView);
         } else {
             Log.e(LOG_TAG, "No movie synopsis received");
         }
