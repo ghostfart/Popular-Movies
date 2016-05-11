@@ -10,3 +10,6 @@ I keep it in a different resource file (secure.xml) which isn't managed by git, 
 <resources>
     <string name="appid_key">*********</string>
 </resources>
+
+
+Cleaned build for final upload
