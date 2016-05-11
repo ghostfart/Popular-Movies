@@ -1,7 +1,6 @@
 package nz.co.maitech.popularmovies;
 
 import android.app.Activity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,17 +30,11 @@ public class MoviePosterAdapter extends ArrayAdapter<Movie> {
     public View getView(int position, View convertView, ViewGroup parent) {
         Movie movie = getItem(position);
         String posterURL =  "http://image.tmdb.org/t/p/w342/";
-
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.grid_item_poster, parent, false);
         }
-
         ImageView posterView = (ImageView) convertView.findViewById(R.id.movie_poster_image_view);
-        Log.v("Image URL : ", posterURL + movie.getPosterPath());
         Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(posterView);
-
         return convertView;
     }
-
-
 }

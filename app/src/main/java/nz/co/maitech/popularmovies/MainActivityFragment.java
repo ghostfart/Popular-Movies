@@ -1,9 +1,11 @@
 package nz.co.maitech.popularmovies;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,14 +34,27 @@ public class MainActivityFragment extends Fragment {
     private MoviePosterAdapter moviePosterAdapter;
     private ArrayList<Movie> movieList = new ArrayList<>();
     private String SAVE_STATE_MOVIE_LIST_KEY = "movies";
+    private String SAVE_STATE_SEARCH_TERM_KEY = "search";
+    private final String LOG_TAG = this.getClass().getSimpleName();
+    private String currentSearchTerm;
 
 
-    public MainActivityFragment() {
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String prefSearchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
+        if (currentSearchTerm == null || !currentSearchTerm.equals(prefSearchTerm)) {
+            currentSearchTerm = prefSearchTerm;
+            retrieveMovies();
+        }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(SAVE_STATE_MOVIE_LIST_KEY, movieList);
+        outState.putCharArray(SAVE_STATE_SEARCH_TERM_KEY, currentSearchTerm.toCharArray());
         super.onSaveInstanceState(outState);
     }
 
@@ -51,14 +66,15 @@ public class MainActivityFragment extends Fragment {
         } else {
             movieList = savedInstanceState.getParcelableArrayList(SAVE_STATE_MOVIE_LIST_KEY);
         }
+        if (savedInstanceState != null && savedInstanceState.containsKey(SAVE_STATE_SEARCH_TERM_KEY)) {
+            currentSearchTerm = new String (savedInstanceState.getCharArray(SAVE_STATE_SEARCH_TERM_KEY));
+        }
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-
 
         moviePosterAdapter = new MoviePosterAdapter(getActivity(), movieList);
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
@@ -72,7 +88,6 @@ public class MainActivityFragment extends Fragment {
                 Intent intent = new Intent(getContext(), MovieSynopsis.class);
                 intent.putExtra("movie", moviePosterAdapter.getItem(position));
                 startActivity(intent);
-//                Toast.makeText(getContext(), "" + position, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -80,8 +95,10 @@ public class MainActivityFragment extends Fragment {
     }
 
     private void retrieveMovies() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String searchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
         FetchMoviesTask fetchMovies = new FetchMoviesTask();
-        fetchMovies.execute();
+        fetchMovies.execute(searchTerm);
     }
 
     public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
@@ -90,7 +107,7 @@ public class MainActivityFragment extends Fragment {
         private Uri.Builder uriBuilder = new Uri.Builder();
         final String POPULAR_SEARCH_URL = "https://api.themoviedb.org/3/movie/popular?";
         final String TOP_RATED_SEARCH_URL = "https://api.themoviedb.org/3/movie/top_rated?";
-        final String APPID_QUERY = "api_key";
+        final String APPID_QUERY = "api_key";  // This is the query term for the http GET request. Key is a string stored in secure_keys.xml
 
         @Override
         protected Movie[] doInBackground(String... params) {
@@ -101,8 +118,8 @@ public class MainActivityFragment extends Fragment {
 
             try {
                 // Build the URL
-                uriBuilder = Uri.parse(POPULAR_SEARCH_URL).buildUpon();
-                uriBuilder.appendQueryParameter(APPID_QUERY, getString(R.string.appid_key));
+                uriBuilder = Uri.parse(params[0]).buildUpon();
+                uriBuilder.appendQueryParameter(APPID_QUERY, getString(R.string.appid_key)); // Key appid_key is a string stored in secure_keys.xml
                 URL url = new URL(uriBuilder.toString());
 
                 // Create the request and open the connection
@@ -183,12 +200,10 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(Movie[] result) {
             if (result != null) {
-
-                    moviePosterAdapter.clear();
-                    for (Movie movie : result) {
-                        moviePosterAdapter.add(movie);
-                    }
-                    Log.v(LOG_TAG, "Made an api call");
+                moviePosterAdapter.clear();
+                for (Movie movie : result) {
+                    moviePosterAdapter.add(movie);
+                }
             }
         }
     }

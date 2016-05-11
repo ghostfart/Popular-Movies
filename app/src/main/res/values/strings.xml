@@ -2,4 +2,15 @@
     <string name="app_name">Popular Movies</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_movie_synopsis">Synopsis</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <!-- Strings for Search Terms preference includes arrays -->
+    <string name="search_terms_label_popular">Popular</string>
+    <string name="search_terms_label_rated">Highest Rated</string>
+    <string name="search_terms_key">search</string>
+    <string name="search_terms_label">Search movies by</string>
+    <string name="search_terms_popular">https://api.themoviedb.org/3/movie/popular?</string>
+    <string name="search_terms_rated">https://api.themoviedb.org/3/movie/top_rated?</string>
+    <string name="search_terms_default">https://api.themoviedb.org/3/movie/popular?</string>
+
 </resources>

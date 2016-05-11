@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="search_terms_options">
+        <item>@string/search_terms_label_popular</item>
+        <item>@string/search_terms_label_rated</item>
+    </string-array>
+
+    <string-array name="search_terms_values">
+        <item>@string/search_terms_popular</item>
+        <item>@string/search_terms_rated</item>
+    </string-array>
+
+</resources>
