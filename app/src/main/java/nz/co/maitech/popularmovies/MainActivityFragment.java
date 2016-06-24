@@ -1,5 +1,6 @@
 package nz.co.maitech.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -25,6 +26,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import io.realm.Realm;
+import io.realm.RealmResults;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -38,6 +43,14 @@ public class MainActivityFragment extends Fragment {
     private final String LOG_TAG = this.getClass().getSimpleName();
     private String currentSearchTerm;
 
+    private Realm realm;
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        realm.close();
+    }
 
 
     @Override
@@ -51,23 +64,26 @@ public class MainActivityFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList(SAVE_STATE_MOVIE_LIST_KEY, movieList);
-        outState.putCharArray(SAVE_STATE_SEARCH_TERM_KEY, currentSearchTerm.toCharArray());
-        super.onSaveInstanceState(outState);
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (savedInstanceState == null || !savedInstanceState.containsKey(SAVE_STATE_MOVIE_LIST_KEY)) {
-            movieList = new ArrayList<>();
-        } else {
-            movieList = savedInstanceState.getParcelableArrayList(SAVE_STATE_MOVIE_LIST_KEY);
-        }
+
         if (savedInstanceState != null && savedInstanceState.containsKey(SAVE_STATE_SEARCH_TERM_KEY)) {
-            currentSearchTerm = new String (savedInstanceState.getCharArray(SAVE_STATE_SEARCH_TERM_KEY));
+            currentSearchTerm = new String(savedInstanceState.getCharArray(SAVE_STATE_SEARCH_TERM_KEY));
+        }
+
+        // Create a new empty instance of Realm.
+        realm = Realm.getDefaultInstance();
+
+        // Query the database for movies in storage.
+        RealmResults<Movie> results = realm.where(Movie.class).findAll();
+
+        // If there is the correct number of movies, and they are recently added, add them to movieList.
+        if (results.size() == 20 && (System.currentTimeMillis() - results.first().getTimeStamp()) < 1200000) {
+            for (Movie movie : results) {
+                movieList.add(movie);
+            }
         }
     }
 
@@ -79,25 +95,24 @@ public class MainActivityFragment extends Fragment {
         moviePosterAdapter = new MoviePosterAdapter(getActivity(), movieList);
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
         moviePosterView.setAdapter(moviePosterAdapter);
-        if (savedInstanceState == null || !savedInstanceState.containsKey(SAVE_STATE_MOVIE_LIST_KEY)) {
-            retrieveMovies();
+        if (movieList.size() < 20) {
+            retrieveMovies();;
         }
         moviePosterView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getContext(), MovieSynopsis.class);
-                intent.putExtra("movie", moviePosterAdapter.getItem(position));
+                intent.putExtra("movie", moviePosterAdapter.getItem(position).getTitle());
                 startActivity(intent);
             }
         });
-
         return rootView;
     }
 
     private void retrieveMovies() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String searchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
-        FetchMoviesTask fetchMovies = new FetchMoviesTask();
+        FetchMoviesTask fetchMovies = new FetchMoviesTask(getContext());
         fetchMovies.execute(searchTerm);
     }
 
@@ -108,6 +123,13 @@ public class MainActivityFragment extends Fragment {
         final String POPULAR_SEARCH_URL = "https://api.themoviedb.org/3/movie/popular?";
         final String TOP_RATED_SEARCH_URL = "https://api.themoviedb.org/3/movie/top_rated?";
         final String APPID_QUERY = "api_key";  // This is the query term for the http GET request. Key is a string stored in secure_keys.xml
+        private Context mContext;
+        private Realm realm;
+
+
+        public FetchMoviesTask (Context context) {
+            mContext = context;
+        }
 
         @Override
         protected Movie[] doInBackground(String... params) {
@@ -119,7 +141,7 @@ public class MainActivityFragment extends Fragment {
             try {
                 // Build the URL
                 uriBuilder = Uri.parse(params[0]).buildUpon();
-                uriBuilder.appendQueryParameter(APPID_QUERY, getString(R.string.appid_key)); // Key appid_key is a string stored in secure_keys.xml
+                uriBuilder.appendQueryParameter(APPID_QUERY, mContext.getString(R.string.appid_key)); // Key appid_key is a string stored in secure_keys.xml
                 URL url = new URL(uriBuilder.toString());
 
                 // Create the request and open the connection
@@ -178,19 +200,23 @@ public class MainActivityFragment extends Fragment {
             final String MAPI_RATING = "vote_average";
             final String MAPI_POSTER = "poster_path";
             final String MAPI_MOVIES = "results";
+            final String MAPI_ID = "id";
 
             JSONObject movieResult = new JSONObject(movieReviewsJsonStr);
             JSONArray movieJsonArray = movieResult.getJSONArray(MAPI_MOVIES);
 
             Movie[] movieArray = new Movie[movieJsonArray.length()];
+            long timeStamp = System.currentTimeMillis();
             for (int i = 0; i < movieJsonArray.length(); i++) {
                 JSONObject jsonMovie = movieJsonArray.getJSONObject(i);
                 Movie movie = new Movie();
+                movie.setId(jsonMovie.getString(MAPI_ID));
                 movie.setTitle(jsonMovie.getString(MAPI_TITLE));
                 movie.setOverview(jsonMovie.getString(MAPI_OVERVIEW));
                 movie.setPosterPath(jsonMovie.getString(MAPI_POSTER));
                 movie.setRating(jsonMovie.getString(MAPI_RATING));
                 movie.setReleaseDate(jsonMovie.getString(MAPI_RELEASE_DATE));
+                movie.setTimeStamp(timeStamp);
                 movieArray[i] = movie;
             }
 
@@ -200,11 +226,28 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(Movie[] result) {
             if (result != null) {
+                deleteCurrentMoviesFromRealm();
                 moviePosterAdapter.clear();
                 for (Movie movie : result) {
                     moviePosterAdapter.add(movie);
                 }
+                saveMoviesToRealm(result);
             }
         }
+
+        private void saveMoviesToRealm(Movie[] result) {
+
+            realm.beginTransaction();
+            realm.copyToRealm(new ArrayList<Movie>(Arrays.asList(result)));
+            realm.commitTransaction();
+        }
+
+        private void deleteCurrentMoviesFromRealm() {
+            RealmResults<Movie> results = realm.where(Movie.class).findAll();
+            realm.beginTransaction();
+            results.deleteAllFromRealm();
+            realm.commitTransaction();
+        }
     }
+
 }

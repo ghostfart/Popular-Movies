@@ -1,31 +1,26 @@
 package nz.co.maitech.popularmovies;
 
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import io.realm.RealmObject;
+import io.realm.annotations.PrimaryKey;
 
 /**
  * Movie is a data wrapper, to hold information about a movie.
  */
-public class Movie implements Parcelable {
+public class Movie extends RealmObject {
 
-
+    @PrimaryKey
+    private String id;
     private String overview;
     private String title;
     private String releaseDate;
     private String rating;
     private String posterPath;
+    private long timeStamp;
 
     public Movie() {
     }
 
-    protected Movie(Parcel in) {
-        overview = in.readString();
-        title = in.readString();
-        releaseDate = in.readString();
-        rating = in.readString();
-        posterPath = in.readString();
-    }
 
     public String getOverview() {
         return overview;
@@ -75,33 +70,23 @@ public class Movie implements Parcelable {
                 + posterPath;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(overview);
-        dest.writeString(title);
-        dest.writeString(releaseDate);
-        dest.writeString(rating);
-        dest.writeString(posterPath);
-    }
-
     public String getYear() {
         return releaseDate.substring(0,4);
     }
 
-    public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
-        @Override
-        public Movie createFromParcel(Parcel in) {
-            return new Movie(in);
-        }
+    public long getTimeStamp() {
+        return timeStamp;
+    }
 
-        @Override
-        public Movie[] newArray(int size) {
-            return new Movie[size];
-        }
-    };
+    public void setTimeStamp(long timeStamp) {
+        this.timeStamp = timeStamp;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }
