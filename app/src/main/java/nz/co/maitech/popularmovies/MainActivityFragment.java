@@ -1,6 +1,5 @@
 package nz.co.maitech.popularmovies;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -112,7 +111,7 @@ public class MainActivityFragment extends Fragment {
     private void retrieveMovies() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String searchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
-        FetchMoviesTask fetchMovies = new FetchMoviesTask(getContext());
+        FetchMoviesTask fetchMovies = new FetchMoviesTask();
         fetchMovies.execute(searchTerm);
     }
 
@@ -123,13 +122,6 @@ public class MainActivityFragment extends Fragment {
         final String POPULAR_SEARCH_URL = "https://api.themoviedb.org/3/movie/popular?";
         final String TOP_RATED_SEARCH_URL = "https://api.themoviedb.org/3/movie/top_rated?";
         final String APPID_QUERY = "api_key";  // This is the query term for the http GET request. Key is a string stored in secure_keys.xml
-        private Context mContext;
-        private Realm realm;
-
-
-        public FetchMoviesTask (Context context) {
-            mContext = context;
-        }
 
         @Override
         protected Movie[] doInBackground(String... params) {
@@ -141,7 +133,7 @@ public class MainActivityFragment extends Fragment {
             try {
                 // Build the URL
                 uriBuilder = Uri.parse(params[0]).buildUpon();
-                uriBuilder.appendQueryParameter(APPID_QUERY, mContext.getString(R.string.appid_key)); // Key appid_key is a string stored in secure_keys.xml
+                uriBuilder.appendQueryParameter(APPID_QUERY, getString(R.string.appid_key)); // Key appid_key is a string stored in secure_keys.xml
                 URL url = new URL(uriBuilder.toString());
 
                 // Create the request and open the connection
@@ -219,7 +211,6 @@ public class MainActivityFragment extends Fragment {
                 movie.setTimeStamp(timeStamp);
                 movieArray[i] = movie;
             }
-
             return movieArray;
         }
 

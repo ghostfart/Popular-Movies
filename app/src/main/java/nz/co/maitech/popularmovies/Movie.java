@@ -1,6 +1,7 @@
 package nz.co.maitech.popularmovies;
 
 
+import io.realm.RealmList;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
@@ -17,10 +18,11 @@ public class Movie extends RealmObject {
     private String rating;
     private String posterPath;
     private long timeStamp;
+    public RealmList<Trailer> trailers;
+    public RealmList<Review> reviews;
 
     public Movie() {
     }
-
 
     public String getOverview() {
         return overview;
