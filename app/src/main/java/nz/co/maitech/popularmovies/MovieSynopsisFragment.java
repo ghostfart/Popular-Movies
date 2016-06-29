@@ -1,5 +1,6 @@
 package nz.co.maitech.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -10,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
@@ -24,9 +26,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 import io.realm.Realm;
-import io.realm.RealmList;
 import io.realm.RealmQuery;
 
 /**
@@ -38,8 +40,44 @@ public class MovieSynopsisFragment extends Fragment {
     private String LOG_TAG = this.getClass().getSimpleName();
     private String posterURL = "http://image.tmdb.org/t/p/w185";
     private Realm realm;
+    private TrailerAdaptor trailerAdaptor;
+    private ArrayList<Trailer> trailerArrayList;
+    private LinearLayout mSynopsisLayout;
+    private Context mContext;
+    private final int SYNOPSIS_CHILD_COUNT = 4;
 
     public MovieSynopsisFragment() {
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+//        } else {
+//            Intent intent = getActivity().getIntent();
+//            if (intent != null && intent.hasExtra("id")) {
+//                RealmQuery<Movie> query = realm.where(Movie.class).contains("id", intent.getStringExtra("id"));
+//                movie = query.findFirst();
+//            }
+//        }
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (movie.trailers.size() < 1) {
+            retrieveTrailersAndReviews();
+        }
+        realm = Realm.getDefaultInstance();
+
+        Log.v(LOG_TAG, "mSynopsis Layout has this number of children : " + mSynopsisLayout.getChildCount());
+        if (movie != null && movie.trailers != null && mSynopsisLayout.getChildCount() <=  SYNOPSIS_CHILD_COUNT) {
+            for (Trailer trailer : movie.trailers) {
+                addTrailerToLayout(trailer);
+            }
+        }
+        realm.close();
     }
 
     @Override
@@ -53,10 +91,12 @@ public class MovieSynopsisFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_movie_synopsis, container, false);
         Intent intent = getActivity().getIntent();
+        mSynopsisLayout = (LinearLayout) rootView.findViewById(R.id.synopsis_linear_layout);
+        mContext = getContext();
 
-        if (intent != null && intent.hasExtra("movie")) {
+        if (intent != null && intent.hasExtra("id")) {
             realm = Realm.getDefaultInstance();
-            RealmQuery<Movie> query = realm.where(Movie.class).contains("title", intent.getStringExtra("movie"));
+            RealmQuery<Movie> query = realm.where(Movie.class).contains("id", intent.getStringExtra("id"));
             movie = query.findFirst();
             TextView textView = (TextView) rootView.findViewById(R.id.synopsis_title_text_view);
             textView.setText(movie.getTitle());
@@ -68,7 +108,17 @@ public class MovieSynopsisFragment extends Fragment {
             textView.setText(movie.getOverview());
             ImageView imageView = (ImageView) rootView.findViewById(R.id.synopsis_poster_image_view);
             Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(imageView);
-            retrieveTrailersAndReviews();
+
+//            trailerAdaptor = new TrailerAdaptor(getActivity(), movie.trailers);
+//            final ListView trailerListView = (ListView) rootView.findViewById(R.id.trailer_listview);
+//            trailerListView.setAdapter(trailerAdaptor);
+//            trailerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                @Override
+//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//                    Log.v(LOG_TAG, "Clicked on " + trailerAdaptor.getItem(position).getName());
+//                }
+//            });
+
         } else {
             Log.e(LOG_TAG, "No movie synopsis received");
         }
@@ -80,17 +130,36 @@ public class MovieSynopsisFragment extends Fragment {
         fetchTrailersAndReviews.execute(movie.getId());
     }
 
-    private void addTrailers(RealmList<Trailer> trailers) {
+    private void addTrailers(ArrayList<Trailer> trailers) {
         realm.beginTransaction();
-        for (Trailer trailer : trailers) {
-            movie.trailers.add(trailer);
-            Log.v(LOG_TAG, "Review by " + trailer.getName());
+        Log.v(LOG_TAG, "mSynopsis Layout has this number of children : " + mSynopsisLayout.getChildCount());
+        for (final Trailer trailer : trailers) {
+            if (trailer.getType().equals("Trailer")) {
+                addTrailerToLayout(trailer);
+                movie.trailers.add(trailer);
+            }
         }
         realm.copyToRealmOrUpdate(movie);
         realm.commitTransaction();
     }
 
-    private void addReviews(RealmList<Review> reviews) {
+    private void addTrailerToLayout(final Trailer trailer) {
+        Log.v(LOG_TAG, "mSynopsis Layout has this number of children : " + mSynopsisLayout.getChildCount());
+        LinearLayout trailerLayout = (LinearLayout) LayoutInflater.from(mContext).inflate(R.layout.list_item_trailer, mSynopsisLayout, false);
+        TextView trailerTextView = (TextView) trailerLayout.getChildAt(1);
+        trailerTextView.setText(trailer.getName());
+        mSynopsisLayout.addView(trailerLayout);
+        trailerLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent viewTrailerIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + trailer.getKey()));
+                startActivity(viewTrailerIntent);
+                Log.v(LOG_TAG, "Trailer name is : " + trailer.getName());
+            }
+        });
+    }
+
+    private void addReviews(ArrayList<Review> reviews) {
         realm.beginTransaction();
         for (Review review : reviews) {
             movie.reviews.add(review);
@@ -109,8 +178,8 @@ public class MovieSynopsisFragment extends Fragment {
         final String TRAILER_SEARCH_URL = "videos";
         final String REVIEWS_SEARCH_URL = "reviews";
         final String APPID_QUERY = "api_key";
-        RealmList<Trailer> trailers;
-        RealmList<Review> reviews;
+        ArrayList<Trailer> trailers;
+        ArrayList<Review> reviews;
 
         @Override
         protected Void doInBackground(String... params) {
@@ -122,6 +191,16 @@ public class MovieSynopsisFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Void aVoid) {
+            Realm asyncRealm = Realm.getDefaultInstance();
+            asyncRealm.beginTransaction();
+            for (Trailer trailer : trailers) {
+                asyncRealm.copyToRealm(trailer);
+            }
+            for (Review review : reviews) {
+                asyncRealm.copyToRealm(review);
+            }
+            asyncRealm.commitTransaction();
+            asyncRealm.close();
             addTrailers(trailers);
             addReviews(reviews);
         }
@@ -141,7 +220,7 @@ public class MovieSynopsisFragment extends Fragment {
                 JSONArray jsonTrailerArray = new JSONObject(trailerJsonStr).getJSONArray(MAPI_TRAILERS);
                 JSONArray jsonReviewsArray = new JSONObject(reviewsJsonStr).getJSONArray(MAPI_REVIEWS);
 
-                trailers = new RealmList<>();
+                trailers = new ArrayList<>();
                 for (int i = 0; i < jsonTrailerArray.length(); i++) {
                     Trailer trailer = new Trailer();
                     JSONObject jsonTrailer = jsonTrailerArray.getJSONObject(i);
@@ -152,7 +231,7 @@ public class MovieSynopsisFragment extends Fragment {
                     trailers.add(trailer);
                 }
 
-                reviews = new RealmList<>();
+                reviews = new ArrayList<>();
                 for (int i = 0; i < jsonReviewsArray.length(); i++) {
                     Review review = new Review();
                     JSONObject jsonReview = jsonReviewsArray.getJSONObject(i);

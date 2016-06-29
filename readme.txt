@@ -13,3 +13,6 @@ I keep it in a different resource file (secure.xml) which isn't managed by git, 
 
 
 Cleaned build for final upload
+
+You Tube Icon sourced from
+https://www.youtube.com/yt/brand/downloads.html

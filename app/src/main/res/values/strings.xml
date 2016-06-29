@@ -12,5 +12,6 @@
     <string name="search_terms_popular">https://api.themoviedb.org/3/movie/popular?</string>
     <string name="search_terms_rated">https://api.themoviedb.org/3/movie/top_rated?</string>
     <string name="search_terms_default">https://api.themoviedb.org/3/movie/popular?</string>
+    <string name="you_tube_icon">You tube icon</string>
 
 </resources>

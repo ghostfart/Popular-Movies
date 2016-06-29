@@ -6,8 +6,9 @@
     tools:showIn="@layout/activity_movie_synopsis">
 
     <LinearLayout
+        android:id="@+id/main_panel_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <TextView
@@ -22,10 +23,11 @@
             android:textSize="28sp" />
 
         <LinearLayout
+            android:id="@+id/synopsis_linear_layout"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="8"
-            android:orientation="vertical">
+            android:orientation="vertical" >
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -38,8 +40,8 @@
                     android:id="@+id/synopsis_poster_image_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:scaleType="center"
-                    android:padding="8dp" />
+                    android:padding="8dp"
+                    android:scaleType="center" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -69,7 +71,6 @@
                 android:id="@+id/synopsis_overview_text_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-
                 android:padding="8dp"
                 android:textSize="10sp" />
 
@@ -80,7 +81,25 @@
                 android:layout_marginRight="32dp"
                 android:background="@android:color/darker_gray" />
 
+            <LinearLayout
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!--<ListView-->
+                    <!--android:id="@+id/trailer_listview"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--tools:listitem="@android:layout/simple_list_item_1">-->
+                <!--</ListView>-->
+
+            </LinearLayout>
+
+
         </LinearLayout>
+
     </LinearLayout>
+
 
 </ScrollView>

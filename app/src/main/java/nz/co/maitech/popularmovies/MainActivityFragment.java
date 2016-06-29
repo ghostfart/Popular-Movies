@@ -95,13 +95,14 @@ public class MainActivityFragment extends Fragment {
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
         moviePosterView.setAdapter(moviePosterAdapter);
         if (movieList.size() < 20) {
-            retrieveMovies();;
+            retrieveMovies();
         }
         moviePosterView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getContext(), MovieSynopsis.class);
-                intent.putExtra("movie", moviePosterAdapter.getItem(position).getTitle());
+                intent.putExtra("id", moviePosterAdapter.getItem(position).getId());
+                Log.v(LOG_TAG, "Searching for movie with id : " + moviePosterAdapter.getItem(position).getId());
                 startActivity(intent);
             }
         });
@@ -229,7 +230,7 @@ public class MainActivityFragment extends Fragment {
         private void saveMoviesToRealm(Movie[] result) {
 
             realm.beginTransaction();
-            realm.copyToRealm(new ArrayList<Movie>(Arrays.asList(result)));
+            realm.copyToRealm(new ArrayList<>(Arrays.asList(result)));
             realm.commitTransaction();
         }
 
