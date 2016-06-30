@@ -16,5 +16,10 @@ public class PopularMoviesApplication extends Application {
         RealmConfiguration realmConfiguration = new RealmConfiguration.Builder(this).build();
         Realm.deleteRealm(realmConfiguration);
         Realm.setDefaultConfiguration(realmConfiguration);
+
+        RealmConfiguration favoriteRealmConfig = new RealmConfiguration.Builder(this)
+                .name("favorites.realm")
+                .build();
+
     }
 }

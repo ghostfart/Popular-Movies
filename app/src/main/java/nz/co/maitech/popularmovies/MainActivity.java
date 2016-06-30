@@ -9,12 +9,28 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final String MOVIE_SYNOPSIS_TAG = "MSTAG";
+    private boolean mTwoPane;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        if (findViewById(R.id.movie_synopsis_container) != null) {
+            mTwoPane = true;
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.movie_synopsis_container, new MovieSynopsisFragment(), MOVIE_SYNOPSIS_TAG)
+                        .commit();
+            }
+        } else {
+            mTwoPane = false;
+        }
+        MainActivityFragment mAF = ((MainActivityFragment)getSupportFragmentManager().findFragmentById(R.id.fragment));
+        mAF.setmTwoPane(mTwoPane);
     }
 
     @Override
@@ -39,4 +55,5 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 }

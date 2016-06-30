@@ -36,15 +36,17 @@ import io.realm.RealmQuery;
  */
 public class MovieSynopsisFragment extends Fragment {
 
-    private Movie movie;
+    public static final String MOVIE_ID = "id";
     private String LOG_TAG = this.getClass().getSimpleName();
+    private final int SYNOPSIS_CHILD_COUNT = 4;
+
+    private Movie movie;
     private String posterURL = "http://image.tmdb.org/t/p/w185";
     private Realm realm;
     private TrailerAdaptor trailerAdaptor;
     private ArrayList<Trailer> trailerArrayList;
     private LinearLayout mSynopsisLayout;
     private Context mContext;
-    private final int SYNOPSIS_CHILD_COUNT = 4;
 
     public MovieSynopsisFragment() {
     }
@@ -66,12 +68,10 @@ public class MovieSynopsisFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        if (movie.trailers.size() < 1) {
+        realm = Realm.getDefaultInstance();
+        if (movie != null && movie.trailers.size() < 1) {
             retrieveTrailersAndReviews();
         }
-        realm = Realm.getDefaultInstance();
-
-        Log.v(LOG_TAG, "mSynopsis Layout has this number of children : " + mSynopsisLayout.getChildCount());
         if (movie != null && movie.trailers != null && mSynopsisLayout.getChildCount() <=  SYNOPSIS_CHILD_COUNT) {
             for (Trailer trailer : movie.trailers) {
                 addTrailerToLayout(trailer);
@@ -93,22 +93,11 @@ public class MovieSynopsisFragment extends Fragment {
         Intent intent = getActivity().getIntent();
         mSynopsisLayout = (LinearLayout) rootView.findViewById(R.id.synopsis_linear_layout);
         mContext = getContext();
+        Bundle args = getArguments();
 
-        if (intent != null && intent.hasExtra("id")) {
-            realm = Realm.getDefaultInstance();
-            RealmQuery<Movie> query = realm.where(Movie.class).contains("id", intent.getStringExtra("id"));
-            movie = query.findFirst();
-            TextView textView = (TextView) rootView.findViewById(R.id.synopsis_title_text_view);
-            textView.setText(movie.getTitle());
-            textView = (TextView) rootView.findViewById(R.id.synopsis_year_text_view);
-            textView.setText(movie.getYear());
-            textView = (TextView) rootView.findViewById(R.id.synopsis_rating_text_view);
-            textView.setText(movie.getRating());
-            textView = (TextView) rootView.findViewById(R.id.synopsis_overview_text_view);
-            textView.setText(movie.getOverview());
-            ImageView imageView = (ImageView) rootView.findViewById(R.id.synopsis_poster_image_view);
-            Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(imageView);
-
+        if (intent != null && intent.hasExtra(MOVIE_ID)) {
+            movie = getMovie(intent.getStringExtra(MOVIE_ID));
+            setSynopsis(rootView);
 //            trailerAdaptor = new TrailerAdaptor(getActivity(), movie.trailers);
 //            final ListView trailerListView = (ListView) rootView.findViewById(R.id.trailer_listview);
 //            trailerListView.setAdapter(trailerAdaptor);
@@ -119,10 +108,33 @@ public class MovieSynopsisFragment extends Fragment {
 //                }
 //            });
 
+        } else if (args != null && args.getString(MOVIE_ID) != null){
+            movie = getMovie(args.getString(MOVIE_ID));
+            setSynopsis(rootView);
         } else {
             Log.e(LOG_TAG, "No movie synopsis received");
+            return rootView;
         }
         return rootView;
+    }
+
+    private void setSynopsis(View rootView) {
+        TextView textView = (TextView) rootView.findViewById(R.id.synopsis_title_text_view);
+        textView.setText(movie.getTitle());
+        textView = (TextView) rootView.findViewById(R.id.synopsis_year_text_view);
+        textView.setText(movie.getYear());
+        textView = (TextView) rootView.findViewById(R.id.synopsis_rating_text_view);
+        textView.setText(movie.getRating());
+        textView = (TextView) rootView.findViewById(R.id.synopsis_overview_text_view);
+        textView.setText(movie.getOverview());
+        ImageView imageView = (ImageView) rootView.findViewById(R.id.synopsis_poster_image_view);
+        Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(imageView);
+    }
+
+    private Movie getMovie(String movieId) {
+        realm = Realm.getDefaultInstance();
+        RealmQuery<Movie> query = realm.where(Movie.class).contains(MOVIE_ID, movieId);
+        return query.findFirst();
     }
 
     private void retrieveTrailersAndReviews() {
@@ -132,7 +144,6 @@ public class MovieSynopsisFragment extends Fragment {
 
     private void addTrailers(ArrayList<Trailer> trailers) {
         realm.beginTransaction();
-        Log.v(LOG_TAG, "mSynopsis Layout has this number of children : " + mSynopsisLayout.getChildCount());
         for (final Trailer trailer : trailers) {
             if (trailer.getType().equals("Trailer")) {
                 addTrailerToLayout(trailer);
@@ -144,7 +155,6 @@ public class MovieSynopsisFragment extends Fragment {
     }
 
     private void addTrailerToLayout(final Trailer trailer) {
-        Log.v(LOG_TAG, "mSynopsis Layout has this number of children : " + mSynopsisLayout.getChildCount());
         LinearLayout trailerLayout = (LinearLayout) LayoutInflater.from(mContext).inflate(R.layout.list_item_trailer, mSynopsisLayout, false);
         TextView trailerTextView = (TextView) trailerLayout.getChildAt(1);
         trailerTextView.setText(trailer.getName());
@@ -154,7 +164,6 @@ public class MovieSynopsisFragment extends Fragment {
             public void onClick(View v) {
                 Intent viewTrailerIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + trailer.getKey()));
                 startActivity(viewTrailerIntent);
-                Log.v(LOG_TAG, "Trailer name is : " + trailer.getName());
             }
         });
     }
@@ -162,13 +171,24 @@ public class MovieSynopsisFragment extends Fragment {
     private void addReviews(ArrayList<Review> reviews) {
         realm.beginTransaction();
         for (Review review : reviews) {
+            addReviewToLayout(review);
             movie.reviews.add(review);
-            Log.v(LOG_TAG, "Review by " + review.getAuthor());
+
         }
         realm.copyToRealmOrUpdate(movie);
         realm.commitTransaction();
-
     }
+
+    private void addReviewToLayout(final Review review) {
+        LinearLayout reviewLayout = (LinearLayout) LayoutInflater.from(mContext).inflate(R.layout.list_item_review, mSynopsisLayout, false);
+        TextView reviewTextView = (TextView) reviewLayout.getChildAt(0);
+        reviewTextView.setText(review.getContent());
+        TextView authorTextView = (TextView) reviewLayout.getChildAt(1);
+        authorTextView.setText(review.getAuthor());
+        mSynopsisLayout.addView(reviewLayout);
+    }
+
+    public void addToFavorite(View view) {}
 
     public class FetchTrailersAndReviewsTask extends AsyncTask<String, Void, Void> {
 

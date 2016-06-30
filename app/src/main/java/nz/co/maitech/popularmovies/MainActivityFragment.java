@@ -35,15 +35,15 @@ import io.realm.RealmResults;
  */
 public class MainActivityFragment extends Fragment {
 
+    private String SAVE_STATE_SEARCH_TERM_KEY = "search";
+
+    private final String LOG_TAG = this.getClass().getSimpleName();
+
+    private String currentSearchTerm;
+    private Realm realm;
     private MoviePosterAdapter moviePosterAdapter;
     private ArrayList<Movie> movieList = new ArrayList<>();
-    private String SAVE_STATE_MOVIE_LIST_KEY = "movies";
-    private String SAVE_STATE_SEARCH_TERM_KEY = "search";
-    private final String LOG_TAG = this.getClass().getSimpleName();
-    private String currentSearchTerm;
-
-    private Realm realm;
-
+    private boolean mTwoPane;
 
     @Override
     public void onDestroy() {
@@ -100,10 +100,21 @@ public class MainActivityFragment extends Fragment {
         moviePosterView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(getContext(), MovieSynopsis.class);
-                intent.putExtra("id", moviePosterAdapter.getItem(position).getId());
-                Log.v(LOG_TAG, "Searching for movie with id : " + moviePosterAdapter.getItem(position).getId());
-                startActivity(intent);
+                if (mTwoPane) {
+                    Bundle args = new Bundle();
+                    args.putString(MovieSynopsisFragment.MOVIE_ID, moviePosterAdapter.getItem(position).getId());
+
+                    MovieSynopsisFragment mSF = new MovieSynopsisFragment();
+                    mSF.setArguments(args);
+
+                    getActivity().getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.movie_synopsis_container, mSF, MainActivity.MOVIE_SYNOPSIS_TAG)
+                            .commit();
+                } else {
+                    Intent intent = new Intent(getContext(), MovieSynopsis.class);
+                    intent.putExtra(MovieSynopsisFragment.MOVIE_ID, moviePosterAdapter.getItem(position).getId());
+                    startActivity(intent);
+                }
             }
         });
         return rootView;
@@ -114,6 +125,10 @@ public class MainActivityFragment extends Fragment {
         String searchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
         FetchMoviesTask fetchMovies = new FetchMoviesTask();
         fetchMovies.execute(searchTerm);
+    }
+
+    public void setmTwoPane(boolean mTwoPane) {
+        this.mTwoPane = mTwoPane;
     }
 
     public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
@@ -235,10 +250,12 @@ public class MainActivityFragment extends Fragment {
         }
 
         private void deleteCurrentMoviesFromRealm() {
+            realm = Realm.getDefaultInstance();
             RealmResults<Movie> results = realm.where(Movie.class).findAll();
             realm.beginTransaction();
             results.deleteAllFromRealm();
             realm.commitTransaction();
+            realm.close();
         }
     }
 
