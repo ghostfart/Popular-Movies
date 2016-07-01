@@ -3,11 +3,15 @@
     <string-array name="search_terms_options">
         <item>@string/search_terms_label_popular</item>
         <item>@string/search_terms_label_rated</item>
+        <item>@string/search_terms_label_favorites</item>
     </string-array>
 
     <string-array name="search_terms_values">
         <item>@string/search_terms_popular</item>
         <item>@string/search_terms_rated</item>
+        <item>@string/search_terms_favorites</item>
     </string-array>
 
+    <string name="search_terms_label_favorites">Favorite Movies</string>
+    <string name="search_terms_favorites">favorites</string>
 </resources>

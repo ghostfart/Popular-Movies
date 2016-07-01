@@ -1,4 +1,4 @@
-package nz.co.maitech.popularmovies;
+package nz.co.maitech.popularmovies.data;
 
 import io.realm.RealmObject;
 

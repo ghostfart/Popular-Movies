@@ -11,6 +11,8 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
+import nz.co.maitech.popularmovies.data.Movie;
+
 /**
  * MoviePosterAdapter is a custom implementation of ArrayAdapter<>
  */

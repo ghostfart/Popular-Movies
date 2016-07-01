@@ -25,10 +25,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import nz.co.maitech.popularmovies.data.Movie;
+import nz.co.maitech.popularmovies.data.MovieDB;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -51,10 +52,17 @@ public class MainActivityFragment extends Fragment {
         realm.close();
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        realm.close();
+    }
+
 
     @Override
     public void onStart() {
         super.onStart();
+        realm = Realm.getDefaultInstance();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String prefSearchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
         if (currentSearchTerm == null || !currentSearchTerm.equals(prefSearchTerm)) {
@@ -62,6 +70,7 @@ public class MainActivityFragment extends Fragment {
             retrieveMovies();
         }
     }
+
 
 
     @Override
@@ -94,7 +103,7 @@ public class MainActivityFragment extends Fragment {
         moviePosterAdapter = new MoviePosterAdapter(getActivity(), movieList);
         GridView moviePosterView = (GridView) rootView.findViewById(R.id.movie_poster_gridview);
         moviePosterView.setAdapter(moviePosterAdapter);
-        if (movieList.size() < 20) {
+        if (movieList == null) {
             retrieveMovies();
         }
         moviePosterView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -102,7 +111,7 @@ public class MainActivityFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (mTwoPane) {
                     Bundle args = new Bundle();
-                    args.putString(MovieSynopsisFragment.MOVIE_ID, moviePosterAdapter.getItem(position).getId());
+                    args.putString(Movie.MOVIE_ID, moviePosterAdapter.getItem(position).getId());
 
                     MovieSynopsisFragment mSF = new MovieSynopsisFragment();
                     mSF.setArguments(args);
@@ -112,7 +121,7 @@ public class MainActivityFragment extends Fragment {
                             .commit();
                 } else {
                     Intent intent = new Intent(getContext(), MovieSynopsis.class);
-                    intent.putExtra(MovieSynopsisFragment.MOVIE_ID, moviePosterAdapter.getItem(position).getId());
+                    intent.putExtra(Movie.MOVIE_ID, moviePosterAdapter.getItem(position).getId());
                     startActivity(intent);
                 }
             }
@@ -123,13 +132,24 @@ public class MainActivityFragment extends Fragment {
     private void retrieveMovies() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String searchTerm = prefs.getString(getString(R.string.search_terms_key), getString(R.string.search_terms_default));
-        FetchMoviesTask fetchMovies = new FetchMoviesTask();
-        fetchMovies.execute(searchTerm);
+
+        if (searchTerm.equals(getString(R.string.search_terms_favorites))) {
+            MovieDB movieDB = new MovieDB(getContext());
+            movieList = movieDB.getFavoriteMovies();
+            moviePosterAdapter.clear();
+            for (Movie movie : movieList) {
+                moviePosterAdapter.add(movie);
+            }
+        } else {
+            FetchMoviesTask fetchMovies = new FetchMoviesTask();
+            fetchMovies.execute(searchTerm);
+        }
     }
 
     public void setmTwoPane(boolean mTwoPane) {
         this.mTwoPane = mTwoPane;
     }
+
 
     public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
 
@@ -233,30 +253,15 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(Movie[] result) {
             if (result != null) {
-                deleteCurrentMoviesFromRealm();
+                MovieDB movieDB = new MovieDB(getContext());
+                movieDB.saveMovies(result);
                 moviePosterAdapter.clear();
                 for (Movie movie : result) {
                     moviePosterAdapter.add(movie);
                 }
-                saveMoviesToRealm(result);
             }
         }
 
-        private void saveMoviesToRealm(Movie[] result) {
-
-            realm.beginTransaction();
-            realm.copyToRealm(new ArrayList<>(Arrays.asList(result)));
-            realm.commitTransaction();
-        }
-
-        private void deleteCurrentMoviesFromRealm() {
-            realm = Realm.getDefaultInstance();
-            RealmResults<Movie> results = realm.where(Movie.class).findAll();
-            realm.beginTransaction();
-            results.deleteAllFromRealm();
-            realm.commitTransaction();
-            realm.close();
-        }
     }
 
 }

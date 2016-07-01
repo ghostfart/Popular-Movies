@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -29,22 +30,23 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import io.realm.Realm;
-import io.realm.RealmQuery;
+import nz.co.maitech.popularmovies.data.Movie;
+import nz.co.maitech.popularmovies.data.MovieDB;
+import nz.co.maitech.popularmovies.data.Review;
+import nz.co.maitech.popularmovies.data.Trailer;
 
 /**
  * A placeholder fragment containing a simple view.
  */
 public class MovieSynopsisFragment extends Fragment {
 
-    public static final String MOVIE_ID = "id";
+
     private String LOG_TAG = this.getClass().getSimpleName();
     private final int SYNOPSIS_CHILD_COUNT = 4;
 
     private Movie movie;
     private String posterURL = "http://image.tmdb.org/t/p/w185";
     private Realm realm;
-    private TrailerAdaptor trailerAdaptor;
-    private ArrayList<Trailer> trailerArrayList;
     private LinearLayout mSynopsisLayout;
     private Context mContext;
 
@@ -54,15 +56,6 @@ public class MovieSynopsisFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-//        } else {
-//            Intent intent = getActivity().getIntent();
-//            if (intent != null && intent.hasExtra("id")) {
-//                RealmQuery<Movie> query = realm.where(Movie.class).contains("id", intent.getStringExtra("id"));
-//                movie = query.findFirst();
-//            }
-//        }
-
     }
 
     @Override
@@ -77,7 +70,6 @@ public class MovieSynopsisFragment extends Fragment {
                 addTrailerToLayout(trailer);
             }
         }
-        realm.close();
     }
 
     @Override
@@ -87,32 +79,41 @@ public class MovieSynopsisFragment extends Fragment {
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+        realm.close();
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_movie_synopsis, container, false);
         Intent intent = getActivity().getIntent();
+        Bundle args = getArguments();
         mSynopsisLayout = (LinearLayout) rootView.findViewById(R.id.synopsis_linear_layout);
         mContext = getContext();
-        Bundle args = getArguments();
 
-        if (intent != null && intent.hasExtra(MOVIE_ID)) {
-            movie = getMovie(intent.getStringExtra(MOVIE_ID));
+        Button favButton = (Button) rootView.findViewById(R.id.favorite_button);
+        favButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                if (movie != null) {
+                    MovieDB movieDB = new MovieDB(mContext);
+                    movieDB.saveMovieToFavorite(movie);
+                }
+            }
+        });
+
+        MovieDB movieDB = new MovieDB(mContext);
+        if (intent != null && intent.hasExtra(Movie.MOVIE_ID)) {
+            movie = movieDB.getMovie(intent.getStringExtra(Movie.MOVIE_ID));
             setSynopsis(rootView);
-//            trailerAdaptor = new TrailerAdaptor(getActivity(), movie.trailers);
-//            final ListView trailerListView = (ListView) rootView.findViewById(R.id.trailer_listview);
-//            trailerListView.setAdapter(trailerAdaptor);
-//            trailerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//                @Override
-//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                    Log.v(LOG_TAG, "Clicked on " + trailerAdaptor.getItem(position).getName());
-//                }
-//            });
 
-        } else if (args != null && args.getString(MOVIE_ID) != null){
-            movie = getMovie(args.getString(MOVIE_ID));
+        } else if (args != null && args.getString(Movie.MOVIE_ID) != null){
+            movie = movieDB.getMovie(args.getString(Movie.MOVIE_ID));
             setSynopsis(rootView);
         } else {
-            Log.e(LOG_TAG, "No movie synopsis received");
+            movie = movieDB.getDefaultMovie();
             return rootView;
         }
         return rootView;
@@ -131,27 +132,17 @@ public class MovieSynopsisFragment extends Fragment {
         Picasso.with(getContext()).load(posterURL + movie.getPosterPath()).into(imageView);
     }
 
-    private Movie getMovie(String movieId) {
-        realm = Realm.getDefaultInstance();
-        RealmQuery<Movie> query = realm.where(Movie.class).contains(MOVIE_ID, movieId);
-        return query.findFirst();
-    }
-
     private void retrieveTrailersAndReviews() {
         FetchTrailersAndReviewsTask fetchTrailersAndReviews = new FetchTrailersAndReviewsTask();
         fetchTrailersAndReviews.execute(movie.getId());
     }
 
-    private void addTrailers(ArrayList<Trailer> trailers) {
-        realm.beginTransaction();
-        for (final Trailer trailer : trailers) {
-            if (trailer.getType().equals("Trailer")) {
-                addTrailerToLayout(trailer);
-                movie.trailers.add(trailer);
-            }
+    private void displayTrailers() {
+        MovieDB movieDB = new MovieDB(mContext);
+        ArrayList<Trailer> trailers = movieDB.getTrailers(movie.getId());
+        for (Trailer trailer : trailers) {
+            addTrailerToLayout(trailer);
         }
-        realm.copyToRealmOrUpdate(movie);
-        realm.commitTransaction();
     }
 
     private void addTrailerToLayout(final Trailer trailer) {
@@ -168,15 +159,12 @@ public class MovieSynopsisFragment extends Fragment {
         });
     }
 
-    private void addReviews(ArrayList<Review> reviews) {
-        realm.beginTransaction();
+    private void displayReviews() {
+        MovieDB movieDB = new MovieDB(mContext);
+        ArrayList<Review> reviews = movieDB.getReviews(movie.getId());
         for (Review review : reviews) {
             addReviewToLayout(review);
-            movie.reviews.add(review);
-
         }
-        realm.copyToRealmOrUpdate(movie);
-        realm.commitTransaction();
     }
 
     private void addReviewToLayout(final Review review) {
@@ -188,7 +176,6 @@ public class MovieSynopsisFragment extends Fragment {
         mSynopsisLayout.addView(reviewLayout);
     }
 
-    public void addToFavorite(View view) {}
 
     public class FetchTrailersAndReviewsTask extends AsyncTask<String, Void, Void> {
 
@@ -211,18 +198,11 @@ public class MovieSynopsisFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            Realm asyncRealm = Realm.getDefaultInstance();
-            asyncRealm.beginTransaction();
-            for (Trailer trailer : trailers) {
-                asyncRealm.copyToRealm(trailer);
-            }
-            for (Review review : reviews) {
-                asyncRealm.copyToRealm(review);
-            }
-            asyncRealm.commitTransaction();
-            asyncRealm.close();
-            addTrailers(trailers);
-            addReviews(reviews);
+            MovieDB movieDB = new MovieDB(mContext);
+            movieDB.saveTrailers(trailers, movie);
+            movieDB.saveReviews(reviews, movie);
+            displayTrailers();
+            displayReviews();
         }
 
         private Void getMovieDataFromJson(String trailerJsonStr, String reviewsJsonStr, String movieId) {

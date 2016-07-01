@@ -1,9 +1,12 @@
-package nz.co.maitech.popularmovies;
+package nz.co.maitech.popularmovies.data;
 
 
 import io.realm.RealmList;
 import io.realm.RealmObject;
+import io.realm.annotations.Ignore;
 import io.realm.annotations.PrimaryKey;
+import nz.co.maitech.popularmovies.data.Review;
+import nz.co.maitech.popularmovies.data.Trailer;
 
 /**
  * Movie is a data wrapper, to hold information about a movie.
@@ -20,6 +23,9 @@ public class Movie extends RealmObject {
     private long timeStamp;
     public RealmList<Trailer> trailers;
     public RealmList<Review> reviews;
+
+    @Ignore
+    public static final String MOVIE_ID = "id";
 
     public Movie() {
     }
